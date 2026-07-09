@@ -116,7 +116,7 @@ class SiteBuilder:
                 
             # Upload to Supabase Storage
             try:
-                self.supabase.storage.from_("Websites").upload(f"{project_id}/index.html", final_path, file_options={"upsert": "true"})
+                self.supabase.storage.from_("Websites").upload(f"{project_id}/index.html", final_path, file_options={"upsert": "true", "content-type": "text/html"})
                 print(f"Agent C: Uploaded index.html to Supabase Storage")
             except Exception as e:
                 print(f"Agent C: Failed to upload index.html to Supabase: {e}")
