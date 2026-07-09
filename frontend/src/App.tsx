@@ -13,9 +13,11 @@ function App() {
   
   const [files, setFiles] = useState<FileList | null>(null)
   
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8002'
+
   const fetchProjects = async () => {
     try {
-      const response = await fetch('http://localhost:8002/projects')
+      const response = await fetch(`${apiUrl}/projects`)
       if (response.ok) {
         const data = await response.json()
         const projects = data.projects || []
@@ -60,7 +62,7 @@ function App() {
     
     // Call FastAPI backend to create project and trigger background worker
     try {
-      const response = await fetch('http://localhost:8002/projects/with-documents', {
+      const response = await fetch(`${apiUrl}/projects/with-documents`, {
         method: 'POST',
         body: formData
       })
