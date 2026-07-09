@@ -190,7 +190,7 @@ function App() {
                       
                       {(project.status === 'HUMAN_REVIEW' || project.status === 'DONE') && (
                         <a 
-                          href={`http://127.0.0.1:8002/websites/${project.id}/index.html`} 
+                          href={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/Websites/${project.id}/index.html`} 
                           target="_blank" 
                           rel="noreferrer"
                           className="view-btn"
