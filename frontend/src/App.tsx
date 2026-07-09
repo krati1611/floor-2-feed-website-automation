@@ -13,6 +13,7 @@ function App() {
   const [files, setFiles] = useState<FileList | null>(null)
   
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8002'
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://egkigmkorroedwuuquwz.supabase.co'
 
   const fetchProjects = async () => {
     try {
@@ -190,7 +191,7 @@ function App() {
                       
                       {(project.status === 'HUMAN_REVIEW' || project.status === 'DONE') && (
                         <a 
-                          href={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/Websites/${project.id}/index.html`} 
+                          href={`${supabaseUrl}/storage/v1/object/public/Websites/${project.id}/index.html`} 
                           target="_blank" 
                           rel="noreferrer"
                           className="view-btn"
