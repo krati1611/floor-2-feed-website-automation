@@ -191,7 +191,7 @@ function App() {
                       
                       {(project.status === 'HUMAN_REVIEW' || project.status === 'DONE') && (
                         <a 
-                          href={`${supabaseUrl}/storage/v1/object/public/Websites/${project.id}/index.html`} 
+                          href={`${apiUrl}/websites/${project.id}/index.html`} 
                           target="_blank" 
                           rel="noreferrer"
                           className="view-btn"
