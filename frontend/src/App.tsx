@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { supabase } from './supabase'
-import { ExternalLink, Plus, RefreshCw, Compass } from 'lucide-react'
+import { Plus, RefreshCw, Compass } from 'lucide-react'
 
 function App() {
   const [projects, setProjects] = useState<any[]>([])
