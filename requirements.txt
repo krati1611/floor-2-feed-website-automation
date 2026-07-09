@@ -20,3 +20,6 @@ Pillow
 # Optional: web framework if we want to run orchestrator as a server receiving webhooks from n8n
 fastapi==0.104.1
 uvicorn==0.24.0
+python-multipart
+anyio<4.0.0
+PyPDF2
