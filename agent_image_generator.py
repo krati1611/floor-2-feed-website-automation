@@ -130,9 +130,15 @@ class ImageGeneratorAgent:
                 
                 workflow_data = json.loads(workflow_str)
                 
-                # Dynamically set the prompt in Node 3 (GeminiNanoBanana2V2)
-                if "3" in workflow_data and "prompt" in workflow_data["3"]["inputs"]:
-                    workflow_data["3"]["inputs"]["prompt"] = prompt
+                # Dynamically set the prompt into the correct text node
+                for node_id, node in workflow_data.items():
+                    if node.get("class_type") == "CLIPTextEncode" and "text" in node.get("inputs", {}):
+                        node["inputs"]["text"] = prompt
+                        # If there's a positive/negative, we assume the first one is positive
+                        break
+                    elif node.get("class_type") == "GeminiNanoBanana2V2" and "prompt" in node.get("inputs", {}):
+                        node["inputs"]["prompt"] = prompt
+                        break
                 
                 print("Queueing ComfyUI prompt...")
                 prompt_id = self._queue_comfyui_prompt(workflow_data)
