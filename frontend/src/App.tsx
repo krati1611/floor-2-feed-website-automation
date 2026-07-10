@@ -13,7 +13,6 @@ function App() {
   const [files, setFiles] = useState<FileList | null>(null)
   
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8002'
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://egkigmkorroedwuuquwz.supabase.co'
 
   const fetchProjects = async () => {
     try {
