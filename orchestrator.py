@@ -249,6 +249,7 @@ def run_agent_worker(task):
             
             if success:
                 supabase.table("tasks").update({"status": TaskStatus.DONE.value}).eq("id", task["id"]).execute()
+                check_website_build_ready(task["project_id"])
             else:
                 supabase.table("tasks").update({"status": TaskStatus.FAILED.value, "error_message": message}).eq("id", task["id"]).execute()
                 
