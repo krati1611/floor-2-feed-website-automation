@@ -33,45 +33,82 @@ class ImageGeneratorAgent:
         return response.json().get("prompt_id")
         
     def _poll_and_download(self, prompt_id: str, output_path: str, project_id: str, room_id: str) -> bool:
-        """Polls ComfyUI history until done, then downloads the image."""
-        history_url = f"{self.comfyui_url}/history/{prompt_id}"
+        """Polls ComfyUI history or Cloud jobs until done, then downloads the image."""
+        is_cloud = "cloud.comfy.org" in self.comfyui_url
         
         # Poll for up to 5 minutes (300s)
         for _ in range(60):
             try:
-                res = requests.get(history_url, headers=self._get_headers())
-                res.raise_for_status()
-                history = res.json()
-                
-                if prompt_id in history:
-                    outputs = history[prompt_id].get("outputs", {})
-                    # Find the first image output
-                    for node_id, node_output in outputs.items():
-                        if "images" in node_output and len(node_output["images"]) > 0:
-                            image_data = node_output["images"][0]
-                            filename = image_data.get("filename")
-                            subfolder = image_data.get("subfolder", "")
-                            folder_type = image_data.get("type", "output")
+                if is_cloud:
+                    url = f"{self.comfyui_url}/jobs/{prompt_id}"
+                    res = requests.get(url, headers=self._get_headers())
+                    res.raise_for_status()
+                    job = res.json()
+                    
+                    status = job.get("status")
+                    if status == "failed":
+                        err = job.get("execution_error", {})
+                        print(f"Comfy Cloud execution failed: {err.get('exception_message')}")
+                        return False
+                    elif status == "completed":
+                        outputs = job.get("outputs", {})
+                        if not outputs:
+                            print("Comfy Cloud returned completed but outputs are empty. Your SaveImage node might not be compatible with cloud capture.")
+                            return False
                             
-                            # Download the image
-                            view_url = f"{self.comfyui_url}/view?filename={filename}&subfolder={subfolder}&type={folder_type}"
-                            img_response = requests.get(view_url, headers=self._get_headers())
-                            img_response.raise_for_status()
-                            
-                            with open(output_path, "wb") as f:
-                                f.write(img_response.content)
+                        # Download image from outputs
+                        for node_id, node_output in outputs.items():
+                            if "images" in node_output and len(node_output["images"]) > 0:
+                                image_data = node_output["images"][0]
+                                filename = image_data.get("filename")
+                                folder_type = image_data.get("type", "output")
                                 
-                            # Upload to Supabase Storage
-                            try:
-                                self.supabase.storage.from_("Websites").upload(f"{project_id}/assets/{room_id}.jpg", output_path, file_options={"upsert": "true", "contentType": "image/jpeg"})
-                            except Exception as e:
-                                print(f"Failed to upload {room_id}.jpg to Supabase: {e}")
+                                view_url = f"{self.comfyui_url}/view?filename={filename}&type={folder_type}"
+                                img_res = requests.get(view_url, headers=self._get_headers())
+                                img_res.raise_for_status()
                                 
-                            return True
+                                with open(output_path, "wb") as f:
+                                    f.write(img_res.content)
+                                    
+                                try:
+                                    self.supabase.storage.from_("Websites").upload(f"{project_id}/assets/{room_id}.jpg", output_path, file_options={"upsert": "true", "contentType": "image/jpeg"})
+                                except Exception as e:
+                                    print(f"Failed to upload {room_id}.jpg to Supabase: {e}")
+                                return True
+                        return False
+                else:
+                    # Local ComfyUI History Poll
+                    history_url = f"{self.comfyui_url}/history/{prompt_id}"
+                    res = requests.get(history_url, headers=self._get_headers())
+                    res.raise_for_status()
+                    history = res.json()
+                    
+                    if prompt_id in history:
+                        outputs = history[prompt_id].get("outputs", {})
+                        for node_id, node_output in outputs.items():
+                            if "images" in node_output and len(node_output["images"]) > 0:
+                                image_data = node_output["images"][0]
+                                filename = image_data.get("filename")
+                                subfolder = image_data.get("subfolder", "")
+                                folder_type = image_data.get("type", "output")
+                                
+                                view_url = f"{self.comfyui_url}/view?filename={filename}&subfolder={subfolder}&type={folder_type}"
+                                img_response = requests.get(view_url, headers=self._get_headers())
+                                img_response.raise_for_status()
+                                
+                                with open(output_path, "wb") as f:
+                                    f.write(img_response.content)
+                                    
+                                try:
+                                    self.supabase.storage.from_("Websites").upload(f"{project_id}/assets/{room_id}.jpg", output_path, file_options={"upsert": "true", "contentType": "image/jpeg"})
+                                except Exception as e:
+                                    print(f"Failed to upload {room_id}.jpg to Supabase: {e}")
+                                    
+                                return True
             except requests.exceptions.HTTPError as e:
                 print(f"Error polling ComfyUI: {e}")
                 if e.response.status_code == 404:
-                    print("ComfyUI history endpoint returned 404. Breaking loop immediately.")
+                    print("ComfyUI API endpoint returned 404. Breaking loop immediately.")
                     return False
             except Exception as e:
                 print(f"Error polling ComfyUI: {e}")
