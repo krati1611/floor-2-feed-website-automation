@@ -190,11 +190,11 @@ import threading
 def check_website_build_ready(project_id):
     """Spawns the website build task only if both dependencies are DONE."""
     if not supabase: return
-    res = supabase.table("tasks").select("task_type, status").eq("project_id", project_id).in_("task_type", ["template_selection", "copy_generation"]).execute()
+    res = supabase.table("tasks").select("task_type, status").eq("project_id", project_id).in_("task_type", ["template_selection", "copy_generation", "image_generation"]).execute()
     tasks = res.data
     
-    # We need both tasks to exist and be DONE
-    if len(tasks) == 2 and all(t["status"] == TaskStatus.DONE.value for t in tasks):
+    # We need all three tasks to exist and be DONE
+    if len(tasks) == 3 and all(t["status"] == TaskStatus.DONE.value for t in tasks):
         # Check if website_build is already spawned
         res2 = supabase.table("tasks").select("id").eq("project_id", project_id).eq("task_type", "website_build").execute()
         if not res2.data:
