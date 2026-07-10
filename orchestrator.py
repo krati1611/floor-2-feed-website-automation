@@ -163,22 +163,21 @@ async def create_project_with_documents(
     }).execute()
     
     # Create Copy Generation & Image Generation tasks
-    if file_paths:
-        supabase.table("tasks").insert({
-            "project_id": project["id"],
-            "agent": "agent_copywriter",
-            "task_type": "copy_generation",
-            "status": TaskStatus.WAITING.value,
-            "payload_json": {"files": file_paths}
-        }).execute()
-        
-        supabase.table("tasks").insert({
-            "project_id": project["id"],
-            "agent": "agent_image_generator",
-            "task_type": "image_generation",
-            "status": TaskStatus.WAITING.value,
-            "payload_json": {"files": file_paths}
-        }).execute()
+    supabase.table("tasks").insert({
+        "project_id": project["id"],
+        "agent": "agent_copywriter",
+        "task_type": "copy_generation",
+        "status": TaskStatus.WAITING.value,
+        "payload_json": {"files": file_paths}
+    }).execute()
+    
+    supabase.table("tasks").insert({
+        "project_id": project["id"],
+        "agent": "agent_image_generator",
+        "task_type": "image_generation",
+        "status": TaskStatus.WAITING.value,
+        "payload_json": {"files": file_paths}
+    }).execute()
     
     # Trigger worker
     background_tasks.add_task(process_tasks)
