@@ -68,6 +68,11 @@ class ImageGeneratorAgent:
                                 print(f"Failed to upload {room_id}.jpg to Supabase: {e}")
                                 
                             return True
+            except requests.exceptions.HTTPError as e:
+                print(f"Error polling ComfyUI: {e}")
+                if e.response.status_code == 404:
+                    print("ComfyUI history endpoint returned 404. Breaking loop immediately.")
+                    return False
             except Exception as e:
                 print(f"Error polling ComfyUI: {e}")
                 
