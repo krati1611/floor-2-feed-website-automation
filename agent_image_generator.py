@@ -32,7 +32,7 @@ class ImageGeneratorAgent:
         response.raise_for_status()
         return response.json().get("prompt_id")
         
-    def _poll_and_download(self, prompt_id: str, output_path: str) -> bool:
+    def _poll_and_download(self, prompt_id: str, output_path: str, project_id: str, room_id: str) -> bool:
         """Polls ComfyUI history until done, then downloads the image."""
         history_url = f"{self.comfyui_url}/history/{prompt_id}"
         
@@ -63,7 +63,7 @@ class ImageGeneratorAgent:
                                 
                             # Upload to Supabase Storage
                             try:
-                                self.supabase.storage.from_("Websites").upload(f"{project_id}/assets/{room_id}.jpg", output_path, file_options={"upsert": "true"})
+                                self.supabase.storage.from_("Websites").upload(f"{project_id}/assets/{room_id}.jpg", output_path, file_options={"upsert": "true", "contentType": "image/jpeg"})
                             except Exception as e:
                                 print(f"Failed to upload {room_id}.jpg to Supabase: {e}")
                                 
@@ -105,16 +105,10 @@ class ImageGeneratorAgent:
         else:
             print(f"No comfy_workflow.json found at {workflow_path}. Falling back to Unsplash...")
             
-        # 2. Fallback to Unsplash
-        print("Falling back to Unsplash...")
-        topic = "luxury real estate interior"
-        if "living" in prompt.lower(): topic = "luxury living room"
-        elif "bed" in prompt.lower(): topic = "luxury bedroom"
-        elif "kitchen" in prompt.lower(): topic = "luxury kitchen"
-        elif "bath" in prompt.lower(): topic = "luxury bathroom"
-        
+        # 2. Fallback to Picsum (Unsplash deprecated)
+        print("Falling back to Picsum...")
         try:
-            url = f"https://source.unsplash.com/1600x900/?{topic.replace(' ', ',')}"
+            url = f"https://picsum.photos/1600/900?random={room_id}"
             response = requests.get(url, allow_redirects=True, timeout=10)
             if response.status_code == 200:
                 with open(output_path, "wb") as f:
@@ -122,12 +116,12 @@ class ImageGeneratorAgent:
                     
                 # Upload to Supabase Storage
                 try:
-                    self.supabase.storage.from_("Websites").upload(f"{project_id}/assets/{room_id}.jpg", output_path, file_options={"upsert": "true"})
+                    self.supabase.storage.from_("Websites").upload(f"{project_id}/assets/{room_id}.jpg", output_path, file_options={"upsert": "true", "contentType": "image/jpeg"})
                 except Exception as e:
                     print(f"Failed to upload fallback {room_id}.jpg to Supabase: {e}")
                 return True
         except Exception as e:
-            print(f"Unsplash fallback failed: {e}")
+            print(f"Image fallback failed: {e}")
             
         return False
 
